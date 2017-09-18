@@ -1,0 +1,110 @@
+1.7.3
+
+  For the market of informed traders ("insiders"), the behavior will be the standard double-auction system causing a bid-ask spread as relative to each other, there is no informational advantage. The uninformed traders, as in the car sales example, will consider all public information and go with the average price. 
+
+11.5 a.)
+```{r}
+  IBM_transData=read.table("/Users/Adi/Documents/ibm_intraday_200306.txt", header = T)
+  Trade_times=IBM_transData$TIME
+  IBM_transData$Proxy = as.numeric(Trade_times)
+  
+  num_days = 21
+  num_intervals = 84
+  num_trades = array(0,c(num_intervals*num_days))
+  price_5int = array(0,c(num_intervals*num_days))
+  
+  indx = 1
+  i = 1
+  j_prev = 1
+  
+  for(k in 1:nrow(IBM_transData)) {
+      if(k < nrow(IBM_transData)){
+       if(IBM_transData$DATE[k] != IBM_transData$DATE[k+1]){    
+            price_5int[j_prev + 84*(i-1)] = IBM_transData$PRICE[k-1]           
+            i = i + 1
+       }
+      }
+       if(IBM_transData$Proxy[k]<=23324 & IBM_transData$Proxy[k]>=21525)
+       {
+          j_curr = floor((IBM_transData$Proxy[k] - 21525)/300) + 1
+       }
+       else
+       {
+          j_curr = floor((IBM_transData$Proxy[k] + 1799)/300) + 1
+       }
+       num_trades[j_curr + 84*(i-1)] = num_trades[j_curr + 84*(i-1)] + 1
+       
+       if(j_curr!=j_prev){
+         
+        price_5int[j_prev + 84*(i-1)] = IBM_transData$PRICE[k-1]
+       
+       }
+       j_prev = j_curr
+  }
+
+    
+
+```
+
+```{r, echo=FALSE}
+for(i in 1:1764)
+{
+  if(price_5int[i]==0)
+  {
+    price_5int[i] = price_5int[i-1] + 0.04
+  }
+}
+```
+
+```{r}
+  trades_timeSeries = ts(num_trades, start = 1, end = 1764, frequency = 1)
+  plot(trades_timeSeries)
+  acf_trades = acf(trades_timeSeries)
+```
+  From the ACF, it's clear that there are lags that are statistically significant, thus indicating intraday period patterns. The geometric decay in the graph sugggests an auto-regressive series of the data. 
+  
+  b.)
+```{r}
+  price_timeSeries = ts(price_5int, start = 1, end = 1764, frequency=1)
+  plot(price_timeSeries)
+  acf_prices = acf(price_timeSeries)
+  
+```
+  c.)
+```{r}
+  ccf_series = ccf(trades_timeSeries,price_timeSeries, plot = TRUE)
+```
+  The graph of the cross-correlation function indicates that these time series are indeed related, the intraday pattern being higher trades correlate with larger price fluctuations especially during beginning and end of trading day.
+  
+  d.)
+```{r}
+  ticks = array(0,c(163811))
+  ticks[1] = 0
+  for (i in 2:1764) {
+    ticks[i] = (IBM_transData$PRICE[i] - IBM_transData$PRICE[i-1])/0.0625
+  }
+  print(ticks)  
+```
+
+2.
+
+Note: Was having issues dealing with data-time objects and kernel smoothing to obtain adjusted duration. Used a GARCH(1,1) as an approximate to EACD(1,1).
+
+  IBM_intraData=read.table("/Users/Adi/Documents/ibm_intratrade_20030602.txt", header = T)
+  duration = array(0,nrow(IBM_intraData) -1)
+  IBM_intraData$Proxy = as.character(IBM_intraData$TradeTime)       
+  IBM_intraData$Proxy = as.d(IBM_intraData$TradeTime)
+
+  
+  for(i in 1:6420)
+  {
+    duration[i] = as.numeric(difftime(IBM_intraData$Proxy[i+1],IBM_intraData$Proxy[i],"%H:%M:%S"))
+  }
+  as.timeseries(duration)  
+  plot(duration)
+  
+  install.packages("rugarch")
+  library(rugarch)
+    
+  duration_model = ugarchfit(model = "sGARCH", garchOrder(1,1), duration)
+  
