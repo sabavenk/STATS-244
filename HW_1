@@ -2,7 +2,9 @@
 
   For the market of informed traders ("insiders"), the behavior will be the standard double-auction system causing a bid-ask spread given that relative to each other there is no informational advantage. The uninformed traders, as in the car sales example, will consider all public information and go with the average price. 
 
-11.5 a.)
+11.5 
+a.)
+
 ```{r}
   IBM_transData=read.table("/Users/Adi/Documents/ibm_intraday_200306.txt", header = T)
   Trade_times=IBM_transData$TIME
@@ -64,6 +66,7 @@ for(i in 1:1764)
   From the ACF, it's clear that there are lags that are statistically significant, thus indicating intraday period patterns. The geometric decay in the graph sugggests an auto-regressive series of the data. 
   
   b.)
+  
 ```{r}
   price_timeSeries = ts(price_5int, start = 1, end = 1764, frequency=1)
   plot(price_timeSeries)
@@ -71,12 +74,14 @@ for(i in 1:1764)
   
 ```
   c.)
+  
 ```{r}
   ccf_series = ccf(trades_timeSeries,price_timeSeries, plot = TRUE)
 ```
   The graph of the cross-correlation function indicates that these time series are indeed related, the intraday pattern being higher trades correlate with larger price fluctuations especially during beginning and end of trading day.
   
   d.)
+  
 ```{r}
   ticks = array(0,c(163811))
   ticks[1] = 0
